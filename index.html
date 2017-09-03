@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title></title>
+		<style type="text/css">
+			.bgmain{width:320px;height:480px;position: relative;background: url(img/game_bg.jpg);margin:100px auto;}
+			.timebar{width: 180px;height: 18px;overflow:hidden;position: absolute;left:63px;top:65px;}
+			.score{display: block;padding-top:9px;margin-left: 60px;font-size:20px;color:#fff;font-weight: bold;}
+			.menu{position: absolute;left: 0;top: 200px;width: 100%;}
+			a{line-height:50px;font-size:30px;color: #f60;text-align: center;font-weight: bold;text-shadow:0 0 5px #FFFF00;display: block;text-decoration: none;}
+			.gameover{position: absolute;left: 0;top:210px;width: 100%;display: none;line-height:50px;font-size:30px;color: #f60;text-align: center;font-weight: bold;text-shadow:0 0 5px #FFFF00;}
+			.worfs img{position: absolute;}
+		</style>
+	</head>
+	<body>
+		<div class="bgmain">
+		<!--
+			图片里面有  时间条  开始于游戏说明    得分  狼（每次只有一个随机定位[arr]，狼是图片运动生成）
+		-->
+		<div class="worfs">
+			
+		</div>
+		<div class="timebar"><img src="img/progress.png"></div>
+		<span class="score">0</span>
+		<div class="menu">
+			<a href="#" class="start">
+				开始
+			</a>
+			<a href="#" class="handle">游戏说明</a>
+		</div>
+		<a class="gameover">game over!</a>
+		</div>
+	</body>
+</html>
+<script>
+//声明已知数据
+//点击 【开始按钮】 （【menu】消失  【时间条】的定时器开启    生成【狼】的定时器开始  狼的出没位子随机9个位子【数组】，【】里的是要var的已知变量 ）
+var start=document.getElementsByClassName('start')[0];
+var menu = document.getElementsByClassName('menu')[0];
+var timebar = document.getElementsByClassName('timebar')[0];
+var worfs = document.getElementsByClassName('worfs')[0];
+var tatol = document.getElementsByClassName('score')[0]; //总分
+var arrPos = [
+		{left:"98px",top:"115px"},
+		{left:"17px",top:"160px"},
+		{left:"15px",top:"220px"},
+		{left:"30px",top:"293px"},
+		{left:"122px",top:"273px"},
+		{left:"207px",top:"295px"},
+		{left:"200px",top:"211px"},
+		{left:"187px",top:"141px"},
+		{left:"100px",top:"185px"}
+	];
+var gameover = document.getElementsByClassName('gameover')[0]; //游戏结束
+var creatworf; //创建狼的定时器
+//点击开始
+	start.onclick=function(){
+		//menu消失
+		menu.style.display = 'none';
+		//时间条定时器开始与结束；
+		timerbar();
+		//每秒出现一只狼，而且每只狼都有被打 和 上下冒的属性方法
+		 creatworf = setInterval(function(){
+		 	if(worfs.children.length==0){ //如果worfs里 有一只狼 就不创建狼 等worfs里的狼remove（worfs.length==0）时， 在创建狼 
+				new Worfscreate();
+		 	}  
+		},100)   //如果不要if(worfs.children.length==0)这句判断 要把100改成1000或大于1000（狼的上下冒的动作总时间为1000毫秒完成remove）~~
+		
+	}
+	
+	function timerbar(){
+		var timeover =0;
+		var timerBar = setInterval(function(){
+			//时间条宽度180px要60秒结束,每秒减少3px,60秒结束显示gameover
+			timeover++;
+			timebar.style.width=180-3*timeover + 'px';
+			if(timeover==60){
+				gameover.style.display='block';
+				clearInterval(timerBar); //停止自己（时间条）
+				clearInterval(creatworf); //停止创建狼
+			}
+		},1000)
+	}
+//---------------------------------------------------------------
+//构造一只灰太狼或小灰灰 
+	function Worfscreate(){
+		this.worf = document.createElement('img');
+		this.rand = parseInt(Math.random()*9) //产生数组的随机0--8的数字
+		this.type = Math.random()<0.3?'x':'h'; //0--0.3小灰灰  0.3--1灰太狼
+		this.inde =0; //控制上冒下冒的显示的图片
+		this.run(); //狼出没上下冒
+		this.clicked(); //狼被打
+		this.worf.style.left=arrPos[this.rand].left; //狼出没的位子
+		this.worf.style.top=arrPos[this.rand].top;
+		worfs.appendChild(this.worf);
+		this.timerup; //往上冒的定时器 。。。。不要这句也对，可以在方法里声明 
+		this.timerdown; //往下冒的定时器
+		this.timercleck; //被打的定时器
+		this.isclick=false; //狼是否被打过，没有被打为false 
+	}
+//每只狼有出没的公共方法
+	Worfscreate.prototype.run=function(){
+			var _this = this;
+		this.timerup = setInterval(function(){  //上冒012345
+			_this.inde++;
+			if(_this.inde==5){
+				clearInterval(_this.timerup);
+				_this.timerdown = setInterval(function(){ //下冒543210
+					_this.inde--;
+					if(_this.inde<0){
+						clearInterval(_this.timerdown);
+						worfs.removeChild(_this.worf); //下冒小于0时div里清除图片 并关闭定时器
+						return
+					}
+					_this.worf.src = 'img/'+_this.type+_this.inde+'.png';
+				},100)
+			}
+			_this.worf.src = 'img/'+_this.type+_this.inde+'.png';//开始从0图片开始 定时器++
+		},100)
+	}
+//每只狼被打的公共方法
+	Worfscreate.prototype.clicked=function(){
+		var _this = this;
+		this.worf.onclick = function(){
+			console.log(333333);
+			if(_this.isclick){return} //判断狼是否被重复点击过 ，点击第1次为false不return运行完被打代码改为true 第2-n次return
+			//关闭狼所有的公共方法
+			clearInterval(_this.timerup);
+			clearInterval(_this.timerdown);
+			clearInterval(_this.timercleck);
+			tatolAll(_this.type);  //调用记分方法
+			_this.inde=5;
+			_this.timercleck = setInterval(function(){
+				_this.inde++;
+				if(_this.inde==10){
+					clearInterval(_this.timercleck);
+					worfs.removeChild(_this.worf);
+					return
+				}
+				_this.worf.src = 'img/'+_this.type+_this.inde+'.png';
+			},100)
+			_this.isclick=true;
+		}
+	}
+//----------------------------------------------------------------	
+//计算分数 应该在被打时调用
+	var score=0;
+	function tatolAll(type){
+		score+=type=='h'?10:-10;
+		tatol.innerHTML=score;
+	}
+</script>
